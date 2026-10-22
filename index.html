@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Carnet de Coupons</title>
 <meta name="description" content="Tes coupons foot, ta mise conseillée et ton bilan, avant chaque match.">
-<meta name="theme-color" content="#141a2b">
+<meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f3f7" media="(prefers-color-scheme: light)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -15,200 +16,311 @@
 <meta name="apple-mobile-web-app-title" content="Coupons">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
-/* Layout: one narrow column of betting slips under a sticky tab bar; a third tab holds the bankroll ledger, stats and settings */
+/* Layout: phone-first app shell — balance card on top, betting slips as tickets, fixed bottom tab bar.
+   Ticket yellow marks odds (the thing you copy into the bookmaker); indigo marks actions. */
 :root {
-  --bg: #eef0f4; --paper: #ffffff; --ink: #141a2b; --muted: #5d6478; --line: #d9dde7;
-  --accent: #2f45c9; --accent-ink: #ffffff; --accent-soft: #e4e8fb;
-  --won: #137a48; --won-soft: #dcf2e6; --lost: #bf3a2c; --lost-soft: #f8e1de; --wait: #9a6510; --wait-soft: #f7ecd6;
+  --bg: #f2f3f7; --surface: #ffffff; --surface-2: #f6f7fb; --ink: #121728; --muted: #5f667b; --faint: #8b91a5; --line: #e1e4ec;
+  --accent: #3446d4; --accent-ink: #ffffff; --accent-soft: #e6e9fc;
+  --odds: #f4c542; --odds-ink: #2b2208; --odds-soft: #fdf3d3;
+  --won: #12844f; --won-soft: #dcf3e7; --lost: #c43d2e; --lost-soft: #f9e2df; --wait: #a06a0e; --wait-soft: #f8eed8;
+  --hero-1: #1b2350; --hero-2: #2f3fb8; --hero-ink: #ffffff; --hero-muted: rgba(255,255,255,.72);
+  --shadow: 0 1px 2px rgba(18,23,40,.06), 0 8px 24px rgba(18,23,40,.06);
   --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
   --f-num: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --nav-h: 64px;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0d111c; --paper: #171c2b; --ink: #e9ecf4; --muted: #9aa2b8; --line: #2a3145;
-    --accent: #8ea0ff; --accent-ink: #0d111c; --accent-soft: #232b52;
-    --won: #5fd39a; --won-soft: #15331f; --lost: #ff8b7d; --lost-soft: #3a1c19; --wait: #f0bd5c; --wait-soft: #35290f;
+    --bg: #0b1020; --surface: #141a2e; --surface-2: #1a2138; --ink: #edf0f8; --muted: #a0a7bd; --faint: #737b93; --line: #262e48;
+    --accent: #8c9cff; --accent-ink: #0b1020; --accent-soft: #222a52;
+    --odds: #f4c542; --odds-ink: #2b2208; --odds-soft: #3a3013;
+    --won: #5bd69b; --won-soft: #14301f; --lost: #ff8a7c; --lost-soft: #3b1c19; --wait: #f1bf5e; --wait-soft: #352a10;
+    --hero-1: #1a2252; --hero-2: #3343c4;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.25);
     color-scheme: dark;
   }
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
 body {
   margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--nav-h) + 28px);
 }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); }
 [hidden] { display: none !important; }
-.wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-header { display: flex; flex-direction: column; gap: 2px; }
-.eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-h1 { font-family: var(--f-display); font-weight: 800; font-size: 30px; line-height: 1.05; margin: 0; letter-spacing: -.01em; }
-.capline { font-size: 14px; color: var(--muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; }
-.capline b { font-family: var(--f-num); color: var(--ink); font-variant-numeric: tabular-nums; }
-.sync { font-size: 12px; color: var(--muted); }
-
-nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 6px; display: flex; gap: 6px; }
-nav.tabs button { flex: 1; font: 600 14px var(--f-body); color: var(--muted); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 9px 8px; cursor: pointer; }
-nav.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button { font: inherit; color: inherit; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-.view { display: flex; flex-direction: column; gap: 14px; }
-.section-title { font-family: var(--f-display); font-weight: 600; font-size: 15px; color: var(--muted); margin: 4px 0 -4px; text-transform: capitalize; }
-.banner { border-radius: 14px; padding: 12px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+/* App bar */
+.appbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand img { width: 34px; height: 34px; border-radius: 9px; flex: none; }
+.brand h1 { font-family: var(--f-display); font-weight: 800; font-size: 21px; margin: 0; letter-spacing: -.01em; white-space: nowrap; }
+.brand .sync { display: block; font-size: 12px; color: var(--faint); font-weight: 500; }
+.iconbtn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; color: var(--ink); }
+.iconbtn.spin svg { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Hero balance card */
+.hero { border-radius: 22px; padding: 18px 18px 14px; color: var(--hero-ink); background: radial-gradient(120% 140% at 100% 0%, var(--hero-2) 0%, var(--hero-1) 62%); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden; }
+.hero .k { font-size: 12.5px; color: var(--hero-muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.hero .bal { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.hero .bal b { font-family: var(--f-num); font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 700; padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+.hero .chip { background: rgba(255,255,255,.14); color: #fff; }
+.hero .chip.up { background: rgba(91,214,155,.22); color: #b5f3d3; }
+.hero .chip.down { background: rgba(255,138,124,.22); color: #ffd0ca; }
+.hero .spark { width: 100%; height: 46px; display: block; }
+.hero .spark .lineP { fill: none; stroke: #fff; stroke-width: 2; }
+.hero .spark .area { fill: rgba(255,255,255,.12); }
+.hero .spark .base { stroke: rgba(255,255,255,.35); stroke-dasharray: 3 4; }
+.hero .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid rgba(255,255,255,.16); padding-top: 10px; }
+.hero .stats div { display: flex; flex-direction: column; min-width: 0; }
+.hero .stats div + div { padding-left: 12px; border-left: 1px solid rgba(255,255,255,.16); margin-left: 12px; }
+.hero .stats b { font-family: var(--f-num); font-size: 16px; }
+.hero .stats span { font-size: 11.5px; color: var(--hero-muted); }
+.hero .empty-cap { font-size: 14px; color: var(--hero-muted); }
+.hero .cta { align-self: flex-start; background: #fff; color: var(--hero-1); border: 0; border-radius: 10px; padding: 9px 14px; font-weight: 700; font-size: 14px; cursor: pointer; }
+
+/* Next send */
+.next { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.next .ic { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.next .t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.next .t b { font-weight: 700; }
+.next .t span { font-size: 12.5px; color: var(--muted); }
+.next .cd { font-family: var(--f-num); font-weight: 700; font-size: 16px; color: var(--accent); white-space: nowrap; }
+
+.banner { border-radius: 14px; padding: 12px 14px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start; }
+.banner div { display: flex; flex-direction: column; gap: 2px; }
+.banner b { font-weight: 700; }
 .banner.info { background: var(--accent-soft); }
 .banner.warn { background: var(--wait-soft); }
 .banner.stop { background: var(--lost-soft); }
-.banner b { font-weight: 600; }
 
-.upcoming { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
-.upcoming ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.upcoming li { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; font-size: 13.5px; }
-.upcoming li .t { font-family: var(--f-num); font-weight: 700; font-variant-numeric: tabular-nums; }
-.upcoming li .l { color: var(--muted); min-width: 0; }
-.upcoming li .s { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.section-title { font-family: var(--f-display); font-weight: 600; font-size: 15px; color: var(--muted); margin: 6px 2px -4px; text-transform: capitalize; }
+.view { display: flex; flex-direction: column; gap: 14px; }
 
-.slip { background: var(--paper); border-radius: 16px; border: 1px solid var(--line); overflow: hidden; }
-.slip-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 10px; }
-.slip-head h2 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 19px; }
-.slip-head small { display: block; color: var(--muted); font-size: 12.5px; font-weight: 500; font-family: var(--f-body); margin-top: 1px; }
-.pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+/* Ticket */
+.slip { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); overflow: hidden; position: relative; }
+.slip::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: var(--wait); }
+.slip.gagne::before { background: var(--won); } .slip.perdu::before { background: var(--lost); } .slip.annule::before { background: var(--faint); }
+.slip-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 16px 16px 6px; }
+.slip-head h2 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 20px; line-height: 1.15; }
+.slip-head small { display: block; color: var(--muted); font-size: 12.5px; font-weight: 500; margin-top: 2px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+.pill svg.i { width: 14px; height: 14px; stroke-width: 2.6; }
 .pill.gagne { background: var(--won-soft); color: var(--won); }
 .pill.perdu { background: var(--lost-soft); color: var(--lost); }
 .pill.en_attente { background: var(--wait-soft); color: var(--wait); }
-.pill.annule { background: var(--accent-soft); color: var(--muted); }
-.legs { list-style: none; margin: 0; padding: 0 16px; }
-.leg { padding: 12px 0; border-top: 1px dashed var(--line); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
-.leg .match { font-weight: 600; min-width: 0; }
-.leg .meta { font-size: 12px; color: var(--muted); font-weight: 500; }
-.leg .bet { grid-column: 1; color: var(--accent); font-weight: 600; font-size: 14.5px; }
-.leg .odd { grid-column: 2; grid-row: 1 / span 2; align-self: start; text-align: right; font-family: var(--f-num); font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
-.leg .odd em { display: block; font-style: normal; font-family: var(--f-body); font-weight: 500; font-size: 11px; color: var(--muted); }
-.leg .why { grid-column: 1 / -1; font-size: 13.5px; color: var(--muted); }
-.leg .res { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; font-size: 12.5px; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--wait); flex: none; }
-.dot.gagne { background: var(--won); } .dot.perdu { background: var(--lost); } .dot.annule { background: var(--muted); }
-.score { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
-/* Perforated tear line between the selections and the total, like a printed betting slip */
-.tear { position: relative; height: 0; border-top: 2px dashed var(--line); margin-top: 4px; }
-.tear::before, .tear::after { content: ""; position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 50%; background: var(--bg); }
-.tear::before { left: -9px; } .tear::after { right: -9px; }
-.total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 14px 16px 4px; }
-.total span { font-size: 13px; color: var(--muted); }
-.total b { font-family: var(--f-num); font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.chance { padding: 0 16px 12px; font-size: 12.5px; color: var(--muted); text-align: right; }
+.pill.annule { background: var(--surface-2); color: var(--muted); }
 
-.stake { margin: 0 16px 14px; padding: 12px; border-radius: 12px; background: var(--accent-soft); display: flex; flex-direction: column; gap: 8px; }
-.stake-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.stake-row .k { font-size: 13px; color: var(--muted); }
-.stake-row .v { font-family: var(--f-num); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
-.risk { font-size: 12px; font-weight: 600; }
+.legs { list-style: none; margin: 0; padding: 4px 16px 6px; display: flex; flex-direction: column; }
+.leg { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 2px 10px; padding: 12px 0; }
+.leg + .leg { border-top: 1px solid var(--line); }
+.st { grid-row: 1 / span 3; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--wait-soft); color: var(--wait); margin-top: 2px; }
+.st svg.i { width: 16px; height: 16px; stroke-width: 2.6; }
+.st.gagne { background: var(--won-soft); color: var(--won); } .st.perdu { background: var(--lost-soft); color: var(--lost); } .st.annule { background: var(--surface-2); color: var(--muted); }
+.leg .match { font-weight: 700; min-width: 0; }
+.leg .meta { grid-column: 2; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); font-weight: 600; flex-wrap: wrap; }
+.dotl { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.leg .bet { grid-column: 2; color: var(--accent); font-weight: 700; font-size: 14.5px; }
+.leg .odd { grid-column: 3; grid-row: 1 / span 2; align-self: start; text-align: center; }
+.leg .odd b { display: block; font-family: var(--f-num); font-weight: 700; font-size: 15px; background: var(--odds); color: var(--odds-ink); border-radius: 9px; padding: 5px 9px; font-variant-numeric: tabular-nums; }
+.leg .odd em { display: block; font-style: normal; font-size: 10.5px; color: var(--faint); margin-top: 3px; font-weight: 600; }
+.leg .why { grid-column: 2 / -1; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.score { font-family: var(--f-num); font-weight: 700; color: var(--ink); background: var(--surface-2); border-radius: 6px; padding: 1px 6px; }
+
+/* Perforated tear line between the selections and the total, like a printed betting slip */
+.tear { position: relative; height: 0; border-top: 2px dashed var(--line); margin: 4px 0 0; }
+.tear::before, .tear::after { content: ""; position: absolute; top: -10px; width: 18px; height: 18px; border-radius: 50%; background: var(--bg); }
+.tear::before { left: -9px; } .tear::after { right: -9px; }
+.total { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding: 14px 16px 6px; }
+.total .lbl2 { font-size: 13px; color: var(--muted); font-weight: 600; }
+.total .big { font-family: var(--f-num); font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.meter { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 5px; }
+.meter .bar { height: 7px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.meter .bar i { display: block; height: 100%; border-radius: 4px; background: var(--wait); }
+.meter .bar i.faible { background: var(--won); } .meter .bar i.eleve { background: var(--lost); }
+.meter span { font-size: 12px; color: var(--muted); font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+
+.stake { margin: 10px 16px 16px; padding: 14px; border-radius: 16px; background: var(--surface-2); display: flex; flex-direction: column; gap: 10px; }
+.stake-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.stake-row div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.stake-row .k { font-size: 12px; color: var(--muted); font-weight: 600; }
+.stake-row .v { font-family: var(--f-num); font-weight: 700; font-size: 19px; font-variant-numeric: tabular-nums; }
+.stake-row .v.gain { color: var(--won); }
+.risk { font-size: 12px; font-weight: 700; }
 .risk.faible { color: var(--won); } .risk.moyen { color: var(--wait); } .risk.eleve { color: var(--lost); }
-.btn { font: 600 14px var(--f-body); border-radius: 10px; padding: 10px 14px; border: 1px solid transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.btn { font: 700 15px var(--f-body); border-radius: 12px; padding: 12px 14px; border: 1px solid transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .btn.primary { background: var(--accent); color: var(--accent-ink); }
 .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.block { width: 100%; }
 .btn:disabled { opacity: .55; cursor: default; }
 .form { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
-.field { display: flex; flex-direction: column; gap: 3px; flex: 1 1 110px; min-width: 0; }
+.field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 110px; min-width: 0; }
 .field.wide { flex-basis: 100%; }
 .field label { font-size: 12px; color: var(--muted); font-weight: 600; }
-.field input { font: 500 16px var(--f-num); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; width: 100%; font-variant-numeric: tabular-nums; }
-.played { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+.field input { font: 500 16px var(--f-num); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; width: 100%; font-variant-numeric: tabular-nums; }
+.played { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; font-weight: 600; }
 .pl { font-family: var(--f-num); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
 .pl.up { color: var(--won); } .pl.down { color: var(--lost); }
 .linkbtn { background: none; border: 0; padding: 0; font: 600 13px var(--f-body); color: var(--muted); text-decoration: underline; cursor: pointer; align-self: flex-start; }
-.err { font-size: 12.5px; color: var(--lost); }
-.ok { font-size: 12.5px; color: var(--won); }
-.notes { padding: 12px 16px 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
-.notes p { margin: 0; }
-.lbl { font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; font-weight: 600; color: var(--muted); display: block; margin-bottom: 2px; }
-.empty { background: var(--paper); border: 1px dashed var(--line); border-radius: 16px; padding: 20px 18px; display: flex; flex-direction: column; gap: 6px; }
+.err { font-size: 12.5px; color: var(--lost); font-weight: 600; }
+.ok { font-size: 12.5px; color: var(--won); font-weight: 600; }
+
+details.notes { border-top: 1px solid var(--line); }
+details.notes summary { list-style: none; cursor: pointer; padding: 12px 16px; font-size: 13.5px; font-weight: 700; color: var(--accent); display: flex; align-items: center; justify-content: space-between; }
+details.notes summary::-webkit-details-marker { display: none; }
+details.notes summary svg.i { width: 18px; height: 18px; transition: transform .2s ease; }
+details.notes[open] summary svg.i { transform: rotate(180deg); }
+details.notes .body { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+details.notes p { margin: 0; }
+.lbl { font-size: 11.5px; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; color: var(--muted); display: block; margin-bottom: 2px; }
+.bilan { margin: 0 16px 14px; padding: 10px 12px; border-radius: 12px; font-size: 13.5px; background: var(--surface-2); }
+
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: 18px; padding: 22px 18px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.empty .ic { width: 44px; height: 44px; border-radius: 14px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin-bottom: 4px; }
 .empty h2 { margin: 0; font-family: var(--f-display); font-size: 18px; }
 .empty p { margin: 0; color: var(--muted); font-size: 14px; }
-.card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.card h2 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 18px; }
+
+/* History */
+.streak { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.streak .dots { display: flex; gap: 6px; flex-wrap: wrap; }
+.streak .dots i { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 800; }
+.streak .dots i.gagne { background: var(--won-soft); color: var(--won); } .streak .dots i.perdu { background: var(--lost-soft); color: var(--lost); }
+.filters { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+.filters button { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* Cards on the capital tab */
+.card { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card h2 { margin: 0; font-family: var(--f-display); font-weight: 800; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.card h2 svg.i { color: var(--accent); }
 .card p { margin: 0; font-size: 14px; color: var(--muted); }
 .card ol { margin: 0; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
-.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
-.kpi { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.kpi b { font-family: var(--f-num); font-size: 20px; font-variant-numeric: tabular-nums; }
-.kpi span { font-size: 12px; color: var(--muted); }
-.spark { width: 100%; height: 90px; display: block; }
-.spark .area { fill: var(--accent-soft); }
-.spark .lineP { fill: none; stroke: var(--accent); stroke-width: 2; }
-.spark .base { stroke: var(--line); stroke-dasharray: 3 4; }
-.spark .end { fill: var(--accent); }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.kpi { display: flex; flex-direction: column; gap: 1px; min-width: 0; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.kpi b { font-family: var(--f-num); font-size: 19px; font-variant-numeric: tabular-nums; }
+.kpi span { font-size: 12px; color: var(--muted); font-weight: 600; }
 .bars { display: flex; flex-direction: column; gap: 10px; }
-.bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; font-size: 13.5px; }
-.bar .track { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
-.bar .fill { height: 100%; background: var(--accent); }
+.bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; font-size: 13.5px; font-weight: 600; }
+.bar .track { grid-column: 1 / -1; height: 7px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.bar .fill { height: 100%; border-radius: 4px; background: var(--accent); }
 .bar .n { font-family: var(--f-num); font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; }
-.rules { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.rules { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
+.rules li { display: flex; gap: 10px; align-items: center; }
+.rules li b { font-family: var(--f-num); min-width: 42px; text-align: center; padding: 3px 0; border-radius: 8px; font-size: 13px; }
+.rules li:nth-child(1) b { background: var(--won-soft); color: var(--won); }
+.rules li:nth-child(2) b { background: var(--wait-soft); color: var(--wait); }
+.rules li:nth-child(3) b { background: var(--lost-soft); color: var(--lost); }
+.rules li:nth-child(n+4) b { background: var(--surface-2); color: var(--muted); }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.foot { font-size: 12px; color: var(--muted); text-align: center; max-width: 46ch; margin: 4px auto 0; }
 code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; }
-@media (prefers-reduced-motion: no-preference) { .bar .fill { transition: width .4s ease; } }
+.foot { font-size: 12px; color: var(--faint); text-align: center; max-width: 46ch; margin: 4px auto 0; }
+
+/* Bottom tab bar */
+nav.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line);
+  padding: 6px max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 6px) max(12px, env(safe-area-inset-left, 0px)); }
+nav.tabbar .in { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; height: calc(var(--nav-h) - 12px); }
+nav.tabbar button { border: 0; background: none; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11.5px; font-weight: 700; color: var(--faint); cursor: pointer; position: relative; }
+nav.tabbar button svg.i { width: 22px; height: 22px; }
+nav.tabbar button[aria-selected="true"] { color: var(--accent); background: var(--accent-soft); }
+nav.tabbar .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--odds); color: var(--odds-ink); font-size: 10.5px; font-weight: 800; display: grid; place-items: center; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar .fill, .meter .bar i { transition: width .5s ease; }
+  .slip { animation: rise .35s ease both; }
+  @keyframes rise { from { transform: translateY(6px); } to { transform: none; } }
+}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 0 2-2V5h14v1a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2v1H5v-1a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 5v14" stroke-dasharray="2 2.5"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 7V5a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3v2a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V6"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17.5v.5"/></symbol>
+</svg>
+
 <div class="wrap">
-  <header>
-    <span class="eyebrow">Ligue 1 · Premier League · Liga · Bundesliga · Serie A · Portugal · Turquie · Coupes d'Europe</span>
-    <h1>Carnet de Coupons</h1>
-    <span class="capline"><span id="capline">Capital : <b>non renseigné</b></span><span class="sync" id="sync"></span></span>
-  </header>
+  <div class="appbar">
+    <div class="brand">
+      <img src="icon-192.png" alt="">
+      <div><h1>Carnet de Coupons</h1><span class="sync" id="sync">Chargement…</span></div>
+    </div>
+    <button class="iconbtn" id="refresh" type="button" aria-label="Actualiser"><svg class="i"><use href="#i-refresh"/></svg></button>
+  </div>
 
   <!-- First launch: connect the app to the private data repository -->
   <section class="view" id="view-setup" hidden>
     <div class="card">
-      <h2>Connecter l'appli</h2>
+      <h2><svg class="i"><use href="#i-key"/></svg>Connecter l'appli</h2>
       <p>Tes coupons, tes mises et ton capital sont rangés dans ton dépôt GitHub privé. Donne à l'appli une clé d'accès limitée à ce seul dépôt.</p>
       <ol>
         <li>Ouvre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">la création de clé GitHub</a>.</li>
         <li>Nom : <code>Carnet de Coupons</code>. Expiration : 1 an.</li>
-        <li>Accès aux dépôts : « Only select repositories », puis choisis <code id="repo-hint">carnet-coupons-data</code>.</li>
-        <li>Permissions du dépôt : « Contents », en « Read and write ».</li>
+        <li>Accès aux dépôts : « Only select repositories », puis <code id="repo-hint">carnet-coupons-data</code>.</li>
+        <li>Permissions : « Contents » en « Read and write ».</li>
         <li>Génère la clé, copie-la et colle-la ci-dessous.</li>
       </ol>
       <form class="form" id="setup-form">
         <div class="field"><label for="cfg-owner">Utilisateur GitHub</label><input id="cfg-owner" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
         <div class="field"><label for="cfg-repo">Dépôt de données</label><input id="cfg-repo" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
         <div class="field wide"><label for="cfg-token">Clé d'accès</label><input id="cfg-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></div>
-        <button class="btn primary" type="submit" id="setup-save">Connecter</button>
+        <button class="btn primary block" type="submit" id="setup-save">Connecter</button>
       </form>
       <span class="err" id="setup-err" hidden></span>
       <p>La clé reste sur ce téléphone uniquement.</p>
     </div>
   </section>
 
-  <nav class="tabs" role="tablist" aria-label="Sections" id="tabs">
-    <button role="tab" aria-selected="true" data-view="coupons" id="tab-coupons">Coupons</button>
-    <button role="tab" aria-selected="false" data-view="historique" id="tab-historique">Historique</button>
-    <button role="tab" aria-selected="false" data-view="capital" id="tab-capital">Capital</button>
-  </nav>
-
   <section class="view" id="view-coupons">
-    <div id="alerts"></div>
-    <div class="upcoming" id="upcoming" hidden>
-      <span class="lbl">Prochains envois aujourd'hui</span>
-      <ul id="upcoming-list"></ul>
-    </div>
+    <div class="hero" id="hero"></div>
+    <div id="next" class="next" hidden></div>
+    <div id="alerts" class="view"></div>
     <div id="open-list"></div>
     <div class="empty" id="open-empty">
+      <div class="ic"><svg class="i"><use href="#i-ticket"/></svg></div>
       <h2>Aucun coupon en cours</h2>
-      <p>Chaque coupon arrive 10 à 15 minutes avant le coup d'envoi, avec une notification. Le programme du jour est préparé chaque matin vers 8h40.</p>
+      <p>Chaque coupon arrive 10 à 15 minutes avant le coup d'envoi, avec une notification sur ce téléphone.</p>
     </div>
   </section>
 
   <section class="view" id="view-historique" hidden>
+    <div class="streak" id="streak" hidden>
+      <span class="lbl">Derniers coupons</span>
+      <div class="dots" id="streak-dots"></div>
+    </div>
+    <div class="filters" role="group" aria-label="Filtrer">
+      <button type="button" data-f="tous" aria-pressed="true">Tous</button>
+      <button type="button" data-f="gagne" aria-pressed="false">Gagnés</button>
+      <button type="button" data-f="perdu" aria-pressed="false">Perdus</button>
+      <button type="button" data-f="joue" aria-pressed="false">Joués</button>
+    </div>
     <div id="hist-list"></div>
     <div class="empty" id="hist-empty">
+      <div class="ic"><svg class="i"><use href="#i-history"/></svg></div>
       <h2>Pas encore d'historique</h2>
       <p>Les coupons terminés arrivent ici avec le score de chaque match et ton gain ou ta perte si tu les as joués.</p>
     </div>
@@ -216,7 +328,7 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
 
   <section class="view" id="view-capital" hidden>
     <div class="card">
-      <h2>Mon capital</h2>
+      <h2><svg class="i"><use href="#i-wallet"/></svg>Mon capital</h2>
       <form class="form" id="cap-form">
         <div class="field"><label for="cap-input">Capital de départ (€)</label><input id="cap-input" inputmode="decimal" autocomplete="off" placeholder="Ex. 100"></div>
         <button class="btn primary" type="submit" id="cap-save">Enregistrer</button>
@@ -228,21 +340,10 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
         <div class="kpi"><b id="k-roi">–</b><span>rendement sur les mises</span></div>
         <div class="kpi"><b id="k-played">–</b><span>coupons joués gagnés</span></div>
       </div>
-      <svg class="spark" id="spark" viewBox="0 0 300 90" preserveAspectRatio="none" aria-label="Évolution du capital" hidden></svg>
     </div>
 
     <div class="card">
-      <h2>Fiabilité des pronostics</h2>
-      <div class="kpis">
-        <div class="kpi"><b id="s-coupons">–</b><span>coupons gagnés (tous)</span></div>
-        <div class="kpi"><b id="s-legs">–</b><span>sélections gagnées</span></div>
-      </div>
-      <div><span class="lbl">Par type de pari</span><div class="bars" id="by-market"></div></div>
-      <div><span class="lbl">Par championnat</span><div class="bars" id="by-league"></div></div>
-    </div>
-
-    <div class="card">
-      <h2>Notifications</h2>
+      <h2><svg class="i"><use href="#i-bell"/></svg>Notifications</h2>
       <p id="notif-status">Active les notifications pour recevoir chaque coupon sur ce téléphone.</p>
       <div class="row">
         <button class="btn primary" type="button" id="notif-on">Activer sur ce téléphone</button>
@@ -253,18 +354,28 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
     </div>
 
     <div class="card">
-      <h2>Règles de mise</h2>
+      <h2><svg class="i"><use href="#i-chart"/></svg>Fiabilité des pronostics</h2>
+      <div class="kpis">
+        <div class="kpi"><b id="s-coupons">–</b><span>coupons gagnés (tous)</span></div>
+        <div class="kpi"><b id="s-legs">–</b><span>sélections gagnées</span></div>
+      </div>
+      <div><span class="lbl">Par type de pari</span><div class="bars" id="by-market"></div></div>
+      <div><span class="lbl">Par championnat</span><div class="bars" id="by-league"></div></div>
+    </div>
+
+    <div class="card">
+      <h2><svg class="i"><use href="#i-shield"/></svg>Règles de mise</h2>
       <ul class="rules">
-        <li>Risque faible (≥ 45 % de chances) : 3 % du capital.</li>
-        <li>Risque moyen (25 à 45 %) : 2 % du capital.</li>
-        <li>Risque élevé (moins de 25 %) : 1 % du capital.</li>
-        <li>Jamais plus de 8 % du capital engagé sur une même journée.</li>
-        <li>Si le capital passe sous 80 % du départ, pause conseillée.</li>
+        <li><b>3 %</b>Risque faible : 45 % de chances ou plus</li>
+        <li><b>2 %</b>Risque moyen : entre 25 et 45 %</li>
+        <li><b>1 %</b>Risque élevé : moins de 25 %</li>
+        <li><b>8 %</b>Maximum engagé sur une même journée</li>
+        <li><b>80 %</b>Sous ce seuil du départ, pause conseillée</li>
       </ul>
     </div>
 
     <div class="card">
-      <h2>Connexion</h2>
+      <h2><svg class="i"><use href="#i-key"/></svg>Connexion</h2>
       <p id="conn-info"></p>
       <button class="btn ghost" type="button" id="disconnect">Changer de clé d'accès</button>
     </div>
@@ -273,6 +384,14 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
   <p class="foot">3 sélections max par coupon, marchés de buts, cotes entre 1,45 et 2,50. Aucun coupon n'est sûr : mise seulement ce que tu acceptes de perdre.</p>
 </div>
 
+<nav class="tabbar" id="tabs" aria-label="Sections">
+  <div class="in" role="tablist">
+    <button role="tab" aria-selected="true" data-view="coupons" id="tab-coupons"><svg class="i"><use href="#i-ticket"/></svg>Coupons<span class="badge" id="badge" hidden></span></button>
+    <button role="tab" aria-selected="false" data-view="historique" id="tab-historique"><svg class="i"><use href="#i-history"/></svg>Historique</button>
+    <button role="tab" aria-selected="false" data-view="capital" id="tab-capital"><svg class="i"><use href="#i-wallet"/></svg>Capital</button>
+  </div>
+</nav>
+
 <script>
 (function () {
   "use strict";
@@ -280,18 +399,22 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
   const DEFAULT_REPO = "carnet-coupons-data";
   const VAPID_PUBLIC = "BPPygTqLFl55-MjL-0eS25d5XT4u7TXv6iXj7FZERkllkX__BBIt8sqUe-RVsLYwDHhWXeWGtjdnub_Ebn3rGes";
   const STATUS = { gagne: "Gagné", perdu: "Perdu", en_attente: "En attente", annule: "Annulé" };
+  const ICON = { gagne: "i-check", perdu: "i-x", en_attente: "i-clock", annule: "i-minus" };
   const MARKET = { btts: "Les deux équipes marquent", buts_equipe: "Buts d'une équipe", total_buts: "Total de buts" };
+  const LEAGUE_COLOR = { "Ligue 1": "#2f6bff", "Premier League": "#7b2cbf", "LaLiga": "#ff4b3e", "Bundesliga": "#d20515", "Serie A": "#0aa5a5", "Liga Portugal": "#16a34a", "Süper Lig": "#e11d48", "Ligue des champions": "#3b5bdb", "Europa League": "#f08c00", "Conference League": "#2fb344" };
   const RISK = { faible: { pct: 0.03, label: "Risque faible" }, moyen: { pct: 0.02, label: "Risque moyen" }, eleve: { pct: 0.01, label: "Risque élevé" } };
   const DAY_CAP = 0.08;
   const VIEWS = ["coupons", "historique", "capital"];
 
-  const state = { cfg: null, coupons: [], paris: {}, capital: null, programme: null, editing: null, saving: false, lastSync: null };
+  const state = { cfg: null, coupons: [], paris: {}, capital: null, programme: null, editing: null, saving: false, filter: "tous" };
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const icon = (id, cls) => { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("class", "i" + (cls ? " " + cls : "")); const u = document.createElementNS("http://www.w3.org/2000/svg", "use"); u.setAttribute("href", "#" + id); s.appendChild(u); return s; };
   const num = (v) => { const n = parseFloat(String(v).replace(/\s/g, "").replace(",", ".")); return isFinite(n) ? n : NaN; };
   const fmtOdd = (n) => (typeof n === "number" ? n.toFixed(2).replace(".", ",") : "–");
   const eur = (n) => (isFinite(n) ? n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €" : "–");
   const signed = (n) => (n > 0 ? "+" : n < 0 ? "−" : "") + eur(Math.abs(n));
+  const pct = (n) => (n >= 0 ? "+" : "−") + String(Math.abs(Math.round(n * 1000) / 10)).replace(".", ",") + " %";
   const todayISO = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
   const dayLabel = (iso) => { try { return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); } catch (e) { return iso; } };
   const store = {
@@ -305,11 +428,10 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
   function b64decode(b64) { const bin = atob(b64.replace(/\n/g, "")); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
   function apiUrl(path) { return "https://api.github.com/repos/" + encodeURIComponent(state.cfg.owner) + "/" + encodeURIComponent(state.cfg.repo) + "/contents/" + path; }
   async function gh(path, opts) {
-    const res = await fetch(apiUrl(path) + (opts && opts.method ? "" : "?t=" + Date.now()), Object.assign({
+    return fetch(apiUrl(path) + (opts && opts.method ? "" : "?t=" + Date.now()), Object.assign({
       cache: "no-store",
       headers: { "Authorization": "Bearer " + state.cfg.token, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }
     }, opts || {}));
-    return res;
   }
   async function readJSON(path) {
     const res = await gh(path);
@@ -333,21 +455,24 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
     throw Object.assign(new Error("conflict"), { code: "http" });
   }
 
+  let refreshing = false;
   async function refresh() {
-    if (!state.cfg) return;
+    if (!state.cfg || refreshing) return;
+    refreshing = true; $("refresh").classList.add("spin");
     try {
       const [c, p, k, g] = await Promise.all([readJSON("coupons.json"), readJSON("paris.json"), readJSON("capital.json"), readJSON("programme.json")]);
       state.coupons = ((c.data && c.data.coupons) || []).slice().sort((a, b) => String(b.publie_le || "").localeCompare(String(a.publie_le || "")));
       state.paris = (p.data && p.data.paris) || {};
       state.capital = k.data;
       state.programme = g.data;
-      state.lastSync = new Date();
-      store.set("carnet-cache", { coupons: state.coupons, paris: state.paris, capital: state.capital, programme: state.programme, at: state.lastSync.toISOString() });
-      $("sync").textContent = "· à jour " + state.lastSync.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      const now = new Date();
+      store.set("carnet-cache", { coupons: state.coupons, paris: state.paris, capital: state.capital, programme: state.programme, at: now.toISOString() });
+      $("sync").textContent = "À jour à " + now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
     } catch (e) {
-      $("sync").textContent = e.code === "auth" ? "· clé d'accès refusée" : "· hors ligne, dernières données affichées";
-      if (e.code === "auth") { showSetup("La clé d'accès a été refusée ou a expiré. Crée-en une nouvelle."); return; }
+      $("sync").textContent = e.code === "auth" ? "Clé d'accès refusée" : "Hors ligne · dernières données";
+      if (e.code === "auth") { refreshing = false; $("refresh").classList.remove("spin"); showSetup("La clé d'accès a été refusée ou a expiré. Crée-en une nouvelle."); return; }
     }
+    refreshing = false; $("refresh").classList.remove("spin");
     renderAll();
   }
 
@@ -378,30 +503,76 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
   }
   function stakeFor(c) { const L = ledger(); if (L.now == null) return null; return Math.max(0.5, Math.round(L.now * RISK[riskOf(c)].pct * 2) / 2); }
   function engagedToday() { const t = todayISO(); return state.coupons.filter(c => c.date === t && state.paris[c.id]).reduce((s, c) => s + (state.paris[c.id].mise || 0), 0); }
+  function probaOf(c) {
+    if (typeof c.proba === "number") return c.proba;
+    const legs = c.selections || []; if (!legs.length) return null;
+    return legs.reduce((p, s) => p * (typeof s.cote === "number" ? 0.95 / s.cote : 1), 1);
+  }
 
   // ---------- rendering ----------
-  function renderHeader() {
-    const L = ledger(), cap = $("capline");
-    cap.textContent = "";
-    if (L.now == null) { cap.append("Capital : ", el("b", null, "non renseigné")); return; }
-    cap.append("Capital : ", el("b", null, eur(L.now)));
-    if (L.settled) cap.append(" (" + signed(L.pl) + ")");
+  function sparkline(svg, points, start) {
+    svg.textContent = "";
+    const W = 300, H = 46, pad = 4;
+    const min = Math.min(...points, start), max = Math.max(...points, start), span = max - min || 1;
+    const x = (i) => (i / (points.length - 1)) * (W - pad * 2) + pad;
+    const y = (v) => H - pad - ((v - min) / span) * (H - pad * 2);
+    const pts = points.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
+    const mk = (t, a) => { const n = document.createElementNS("http://www.w3.org/2000/svg", t); Object.keys(a).forEach(k => n.setAttribute(k, a[k])); return n; };
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("preserveAspectRatio", "none");
+    svg.appendChild(mk("line", { class: "base", x1: 0, x2: W, y1: y(start), y2: y(start) }));
+    svg.appendChild(mk("polygon", { class: "area", points: x(0) + "," + H + " " + pts + " " + x(points.length - 1) + "," + H }));
+    svg.appendChild(mk("polyline", { class: "lineP", points: pts, "vector-effect": "non-scaling-stroke" }));
+  }
+  function renderHero() {
+    const L = ledger(), h = $("hero"); h.textContent = "";
+    h.appendChild(el("span", "k", "Capital"));
+    if (L.now == null) {
+      h.appendChild(el("span", "empty-cap", "Renseigne ton capital de départ pour obtenir une mise conseillée sur chaque coupon."));
+      const b = el("button", "cta", "Entrer mon capital"); b.type = "button";
+      b.addEventListener("click", () => { show("capital"); setTimeout(() => $("cap-input").focus(), 50); });
+      h.appendChild(b); return;
+    }
+    const bal = el("div", "bal");
+    bal.appendChild(el("b", null, eur(L.now)));
+    if (L.settled) bal.appendChild(el("span", "chip " + (L.pl >= 0 ? "up" : "down"), signed(L.pl) + " · " + pct(L.pl / L.start)));
+    else bal.appendChild(el("span", "chip", "départ " + eur(L.start)));
+    h.appendChild(bal);
+    if (L.points.length >= 2) { const s = document.createElementNS("http://www.w3.org/2000/svg", "svg"); s.setAttribute("class", "spark"); s.setAttribute("aria-label", "Évolution du capital"); h.appendChild(s); sparkline(s, L.points, L.start); }
+    const settled = state.coupons.filter(c => c.statut === "gagne" || c.statut === "perdu");
+    let lw = 0, ln = 0; state.coupons.forEach(c => (c.selections || []).forEach(s => { if (s.statut === "gagne" || s.statut === "perdu") { ln++; if (s.statut === "gagne") lw++; } }));
+    const st = el("div", "stats");
+    [[settled.length ? settled.filter(c => c.statut === "gagne").length + "/" + settled.length : "–", "coupons gagnés"],
+     [ln ? Math.round(100 * lw / ln) + " %" : "–", "sélections OK"],
+     [L.staked ? pct(L.pl / L.staked) : "–", "rendement"]].forEach(([v, k]) => { const d = el("div"); d.append(el("b", null, v), el("span", null, k)); st.appendChild(d); });
+    h.appendChild(st);
+  }
+  function nextSlot() {
+    const p = state.programme;
+    if (!p || p.date !== todayISO() || !Array.isArray(p.creneaux)) return null;
+    const now = new Date();
+    const items = p.creneaux.filter(s => s.statut === "prevu").map(s => {
+      const m = /(\d{1,2})h(\d{2})/.exec(s.envoi || s.heure || ""); if (!m) return null;
+      const d = new Date(); d.setHours(+m[1], +m[2], 0, 0); return Object.assign({ at: d }, s);
+    }).filter(s => s && s.at > new Date(now.getTime() - 5 * 60000)).sort((a, b) => a.at - b.at);
+    return items[0] || null;
+  }
+  function renderNext() {
+    const box = $("next"), s = nextSlot();
+    box.textContent = ""; box.hidden = !s; if (!s) return;
+    const ic = el("div", "ic"); ic.appendChild(icon("i-bell"));
+    const t = el("div", "t");
+    t.append(el("b", null, "Prochain coupon · " + s.heure), el("span", null, (s.ligues || "") + (s.envoi ? " · envoi vers " + s.envoi : "")));
+    const mins = Math.round((s.at - new Date()) / 60000);
+    const cd = el("span", "cd", mins <= 0 ? "imminent" : mins < 60 ? mins + " min" : Math.floor(mins / 60) + " h " + String(mins % 60).padStart(2, "0"));
+    box.append(ic, t, cd);
   }
   function renderAlerts() {
     const box = $("alerts"); box.textContent = "";
-    const L = ledger();
-    const add = (cls, t, d) => { const b = el("div", "banner " + cls); b.append(el("b", null, t), el("span", null, d)); box.appendChild(b); };
-    if (L.now == null) { add("info", "Renseigne ton capital", "Va dans l'onglet « Capital » pour entrer ton capital de départ : chaque coupon t'indiquera alors la mise conseillée."); return; }
+    const L = ledger(); if (L.now == null) return;
+    const add = (cls, t, d) => { const b = el("div", "banner " + cls); b.appendChild(icon("i-alert")); const x = el("div"); x.append(el("b", null, t), el("span", null, d)); b.appendChild(x); box.appendChild(b); };
     if (L.start && L.now < L.start * 0.8) add("stop", "Pause conseillée", "Ton capital est passé sous 80 % du départ. Mieux vaut arrêter quelques jours que chercher à te refaire.");
     const eng = engagedToday();
     if (eng > L.now * DAY_CAP) add("warn", "Limite du jour dépassée", "Tu as engagé " + eur(eng) + " aujourd'hui, au-delà des 8 % conseillés (" + eur(L.now * DAY_CAP) + ").");
-  }
-  function renderUpcoming() {
-    const ul = $("upcoming-list"); ul.textContent = "";
-    const p = state.programme;
-    const items = p && p.date === todayISO() && Array.isArray(p.creneaux) ? p.creneaux.filter(s => s.statut === "prevu") : [];
-    $("upcoming").hidden = items.length === 0;
-    items.forEach(s => { const li = el("li"); li.append(el("span", "t", s.heure || ""), el("span", "l", s.ligues || ""), el("span", "s", s.envoi ? "envoi " + s.envoi : "")); ul.appendChild(li); });
   }
   function stakeBox(c) {
     const box = el("div", "stake"), p = state.paris[c.id], risk = riskOf(c);
@@ -409,8 +580,8 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
       const row = el("div", "played");
       row.appendChild(el("span", null, "Joué : " + eur(p.mise) + " à " + fmtOdd(oddOf(c, p))));
       const v = plOf(c, p);
-      if (v == null) row.appendChild(el("span", "pl", "gain possible " + eur(p.mise * oddOf(c, p))));
-      else row.appendChild(el("span", "pl " + (v > 0 ? "up" : v < 0 ? "down" : ""), (c.statut === "gagne" ? "Gagné " : c.statut === "perdu" ? "Perdu " : "Remboursé ") + signed(v)));
+      if (v == null) row.appendChild(el("span", "pl", "→ " + eur(p.mise * oddOf(c, p))));
+      else row.appendChild(el("span", "pl " + (v > 0 ? "up" : v < 0 ? "down" : ""), signed(v)));
       box.appendChild(row);
       if (!c.statut || c.statut === "en_attente") {
         const undo = el("button", "linkbtn", "Je ne l'ai pas joué finalement"); undo.type = "button";
@@ -419,10 +590,10 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
       }
       return box;
     }
-    const sugg = stakeFor(c), row = el("div", "stake-row"), k = el("div");
-    k.append(el("div", "k", "Mise conseillée"), el("span", "risk " + risk, RISK[risk].label + " · " + Math.round(RISK[risk].pct * 100) + " % du capital"));
-    row.append(k, el("span", "v", sugg == null ? "capital ?" : eur(sugg)));
-    box.appendChild(row);
+    const sugg = stakeFor(c), row = el("div", "stake-row");
+    const a = el("div"); a.append(el("span", "k", "Mise conseillée"), el("span", "v", sugg == null ? "–" : eur(sugg)), el("span", "risk " + risk, RISK[risk].label + " · " + Math.round(RISK[risk].pct * 100) + " %"));
+    const b = el("div"); b.append(el("span", "k", "Gain possible"), el("span", "v gain", sugg == null ? "–" : eur(sugg * c.cote_totale)));
+    row.append(a, b); box.appendChild(row);
     if (c.statut && c.statut !== "en_attente") return box;
     if (state.editing === c.id) {
       const f = el("form", "form");
@@ -446,48 +617,60 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
       });
       box.append(f, err);
     } else {
-      const b = el("button", "btn primary", "J'ai joué ce coupon"); b.type = "button";
-      b.addEventListener("click", () => { state.editing = c.id; renderAll(); });
-      box.appendChild(b);
+      const btn = el("button", "btn primary block", "J'ai joué ce coupon"); btn.type = "button";
+      btn.addEventListener("click", () => { state.editing = c.id; renderAll(); });
+      box.appendChild(btn);
     }
     return box;
   }
   function slip(c) {
-    const card = el("article", "slip"), head = el("div", "slip-head");
+    const st = c.statut || "en_attente";
+    const card = el("article", "slip " + st), head = el("div", "slip-head");
     const legs = c.selections || [];
     const h = el("h2", null, "Coupon " + (c.creneau || ""));
     let when = "";
     if (c.publie_le) { try { when = " · envoyé à " + new Date(c.publie_le).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); } catch (e) {} }
     h.appendChild(el("small", null, legs.length + " sélection" + (legs.length > 1 ? "s" : "") + when));
-    const st = c.statut || "en_attente";
-    head.append(h, el("span", "pill " + st, STATUS[st] || st));
+    const pill = el("span", "pill " + st); pill.append(icon(ICON[st] || "i-clock"), document.createTextNode(STATUS[st] || st));
+    head.append(h, pill);
     card.appendChild(head);
+
     const ul = el("ul", "legs");
     legs.forEach(s => {
-      const li = el("li", "leg"), m = el("div", "match", s.match || "");
-      m.appendChild(el("div", "meta", [s.competition, s.heure].filter(Boolean).join(" · ")));
-      const odd = el("div", "odd", fmtOdd(s.cote));
-      if (s.cote_estimee) odd.appendChild(el("em", null, "estimée"));
-      li.append(m, odd, el("div", "bet", s.pari || ""));
-      if (s.raison) li.appendChild(el("div", "why", s.raison));
       const ss = s.statut || "en_attente";
-      if (ss !== "en_attente" || s.score) {
-        const r = el("div", "res"); r.append(el("span", "dot " + ss), el("span", null, STATUS[ss] || ss));
-        if (s.score) r.appendChild(el("span", "score", s.score));
-        li.appendChild(r);
-      }
+      const li = el("li", "leg");
+      const dot = el("span", "st " + ss); dot.appendChild(icon(ICON[ss] || "i-clock"));
+      const m = el("div", "match", s.match || "");
+      const odd = el("div", "odd"); odd.appendChild(el("b", null, fmtOdd(s.cote))); if (s.cote_estimee) odd.appendChild(el("em", null, "estimée"));
+      const meta = el("div", "meta");
+      const ld = el("span", "dotl"); ld.style.background = LEAGUE_COLOR[s.competition] || "var(--faint)";
+      meta.append(ld, document.createTextNode([s.competition, s.heure].filter(Boolean).join(" · ")));
+      if (s.score) meta.appendChild(el("span", "score", s.score));
+      li.append(dot, m, odd, meta, el("div", "bet", s.pari || ""));
+      if (s.raison) li.appendChild(el("div", "why", s.raison));
       ul.appendChild(li);
     });
     card.appendChild(ul);
     card.appendChild(el("div", "tear"));
-    const tot = el("div", "total"); tot.append(el("span", null, "Cote totale"), el("b", null, fmtOdd(c.cote_totale)));
+    const tot = el("div", "total");
+    tot.append(el("span", "lbl2", "Cote totale"), el("span", "big", fmtOdd(c.cote_totale)));
+    const p = probaOf(c);
+    if (p != null) {
+      const m = el("div", "meter"), bar = el("div", "bar"), fill = el("i", riskOf(c));
+      fill.style.width = Math.max(3, Math.min(100, p * 100)) + "%"; bar.appendChild(fill);
+      const sp = el("span"); sp.append(el("span", null, c.chance || ("≈ " + Math.round(p * 100) + " % de chances")), el("span", null, Math.round(p * 100) + " %"));
+      m.append(bar, sp); tot.appendChild(m);
+    }
     card.appendChild(tot);
-    if (c.chance) card.appendChild(el("div", "chance", c.chance));
+    if (c.bilan && st !== "en_attente") card.appendChild(el("p", "bilan", c.bilan));
     card.appendChild(stakeBox(c));
-    if (c.infos || c.conseil || c.bilan) {
-      const n = el("div", "notes");
-      [["Dernières infos", c.infos], ["Conseil", c.conseil], ["Analyse après match", c.bilan]].forEach(([k, v]) => { if (!v) return; const p = el("p"); p.append(el("span", "lbl", k), document.createTextNode(v)); n.appendChild(p); });
-      card.appendChild(n);
+    if (c.infos || c.conseil) {
+      const d = el("details", "notes"), s = el("summary");
+      s.append(document.createTextNode("Dernières infos et conseil"), icon("i-chev"));
+      const body = el("div", "body");
+      [["Dernières infos", c.infos], ["Conseil", c.conseil]].forEach(([k, v]) => { if (!v) return; const pp = el("p"); pp.append(el("span", "lbl", k), document.createTextNode(v)); body.appendChild(pp); });
+      d.append(s, body); if (st === "en_attente") d.open = true;
+      card.appendChild(d);
     }
     return card;
   }
@@ -498,8 +681,19 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
       list.forEach(c => { if (c.date !== last) { inner.appendChild(el("h3", "section-title", dayLabel(c.date))); last = c.date; } inner.appendChild(slip(c)); });
       box.appendChild(inner);
     };
-    fill("open-list", "open-empty", state.coupons.filter(c => !c.statut || c.statut === "en_attente"));
-    fill("hist-list", "hist-empty", state.coupons.filter(c => c.statut && c.statut !== "en_attente"));
+    const open = state.coupons.filter(c => !c.statut || c.statut === "en_attente");
+    let done = state.coupons.filter(c => c.statut && c.statut !== "en_attente");
+    const f = state.filter;
+    const filtered = done.filter(c => f === "tous" || (f === "joue" ? !!state.paris[c.id] : c.statut === f));
+    fill("open-list", "open-empty", open);
+    fill("hist-list", "hist-empty", filtered);
+    if (done.length && !filtered.length) { $("hist-empty").hidden = false; $("hist-empty").querySelector("h2").textContent = "Rien dans ce filtre"; $("hist-empty").querySelector("p").textContent = "Change de filtre pour voir les autres coupons."; }
+    else { $("hist-empty").querySelector("h2").textContent = "Pas encore d'historique"; $("hist-empty").querySelector("p").textContent = "Les coupons terminés arrivent ici avec le score de chaque match et ton gain ou ta perte si tu les as joués."; }
+    const badge = $("badge"); badge.hidden = open.length === 0; badge.textContent = String(open.length);
+    const dots = $("streak-dots"); dots.textContent = "";
+    const recent = done.filter(c => c.statut === "gagne" || c.statut === "perdu").slice(0, 14).reverse();
+    $("streak").hidden = recent.length === 0;
+    recent.forEach(c => { const i = el("i", c.statut, c.statut === "gagne" ? "G" : "P"); i.title = dayLabel(c.date) + " " + (c.creneau || ""); dots.appendChild(i); });
   }
   function bars(boxId, groups) {
     const box = $(boxId); box.textContent = "";
@@ -509,6 +703,7 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
       const g = groups[k], row = el("div", "bar");
       row.append(el("span", null, k), el("span", "n", g.w + "/" + g.n + " · " + Math.round(100 * g.w / g.n) + " %"));
       const tr = el("div", "track"), fi = el("div", "fill"); fi.style.width = (100 * g.w / g.n) + "%";
+      if (LEAGUE_COLOR[k]) fi.style.background = LEAGUE_COLOR[k];
       tr.appendChild(fi); row.appendChild(tr); box.appendChild(row);
     });
   }
@@ -517,21 +712,8 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
     $("k-now").textContent = L.now == null ? "–" : eur(L.now);
     $("k-pl").textContent = L.settled ? signed(L.pl) : "–";
     $("k-pl").style.color = L.pl > 0 ? "var(--won)" : L.pl < 0 ? "var(--lost)" : "";
-    $("k-roi").textContent = L.staked ? (L.pl >= 0 ? "+" : "−") + String(Math.abs(Math.round(1000 * L.pl / L.staked) / 10)).replace(".", ",") + " %" : "–";
+    $("k-roi").textContent = L.staked ? pct(L.pl / L.staked) : "–";
     $("k-played").textContent = L.settled ? L.won + "/" + L.settled : "–";
-    const svg = $("spark"); svg.textContent = "";
-    if (L.points.length >= 2) {
-      svg.hidden = false;
-      const min = Math.min(...L.points), max = Math.max(...L.points), span = max - min || 1, W = 300, H = 90, pad = 6;
-      const x = (i) => (i / (L.points.length - 1)) * (W - pad * 2) + pad;
-      const y = (v) => H - pad - ((v - min) / span) * (H - pad * 2);
-      const pts = L.points.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
-      const mk = (t, a) => { const n = document.createElementNS("http://www.w3.org/2000/svg", t); Object.keys(a).forEach(k => n.setAttribute(k, a[k])); return n; };
-      svg.appendChild(mk("line", { class: "base", x1: 0, x2: W, y1: y(L.start), y2: y(L.start) }));
-      svg.appendChild(mk("polygon", { class: "area", points: x(0) + "," + H + " " + pts + " " + x(L.points.length - 1) + "," + H }));
-      svg.appendChild(mk("polyline", { class: "lineP", points: pts, "vector-effect": "non-scaling-stroke" }));
-      svg.appendChild(mk("circle", { class: "end", cx: x(L.points.length - 1), cy: y(L.points[L.points.length - 1]), r: 3.5 }));
-    } else svg.hidden = true;
     const settled = state.coupons.filter(c => c.statut === "gagne" || c.statut === "perdu");
     $("s-coupons").textContent = settled.length ? settled.filter(c => c.statut === "gagne").length + "/" + settled.length : "–";
     let lw = 0, ln = 0; const byM = {}, byL = {};
@@ -549,7 +731,7 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
     if (state.cfg) $("conn-info").textContent = "Données : dépôt " + state.cfg.owner + "/" + state.cfg.repo + ".";
   }
   function renderAll() {
-    renderHeader(); renderAlerts(); renderUpcoming(); renderStats();
+    renderHero(); renderNext(); renderAlerts(); renderStats();
     const a = document.activeElement;
     // Keep a half-typed stake intact when fresh data arrives; redraw once the field loses focus.
     if (a && a.tagName === "INPUT" && $("open-list").contains(a)) { a.addEventListener("blur", () => setTimeout(renderLists, 400), { once: true }); return; }
@@ -631,7 +813,7 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
   // ---------- setup & tabs ----------
   function showSetup(msg) {
     $("view-setup").hidden = false; $("tabs").hidden = true; VIEWS.forEach(v => { $("view-" + v).hidden = true; });
-    $("cfg-owner").value = (state.cfg && state.cfg.owner) || (DEFAULT_OWNER.startsWith("__") ? "" : DEFAULT_OWNER);
+    $("cfg-owner").value = (state.cfg && state.cfg.owner) || DEFAULT_OWNER;
     $("cfg-repo").value = (state.cfg && state.cfg.repo) || DEFAULT_REPO;
     $("repo-hint").textContent = $("cfg-repo").value;
     if (msg) { $("setup-err").textContent = msg; $("setup-err").hidden = false; }
@@ -660,15 +842,22 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
     store.del("carnet-cfg"); state.cfg = null; showSetup();
     if (keep) { $("cfg-owner").value = keep.owner; $("cfg-repo").value = keep.repo; $("repo-hint").textContent = keep.repo; }
   });
+  $("refresh").addEventListener("click", () => refresh());
 
-  const tabs = Array.from(document.querySelectorAll("nav.tabs button"));
+  const tabs = Array.from(document.querySelectorAll("nav.tabbar button"));
   function currentView() { const h = (location.hash || "").slice(1); if (VIEWS.includes(h)) return h; const s = store.get("carnet-tab"); return VIEWS.includes(s) ? s : "coupons"; }
   function show(view) {
     tabs.forEach(t => t.setAttribute("aria-selected", String(t.dataset.view === view)));
     VIEWS.forEach(v => { $("view-" + v).hidden = v !== view; });
     store.set("carnet-tab", view);
+    window.scrollTo(0, 0);
   }
   tabs.forEach(t => t.addEventListener("click", () => { show(t.dataset.view); if (location.hash) history.replaceState(null, "", location.pathname); }));
+  document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+    state.filter = b.dataset.f;
+    document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    renderLists();
+  }));
 
   // ---------- boot ----------
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
@@ -678,7 +867,8 @@ code { font-family: var(--f-num); font-size: 13px; background: var(--accent-soft
   if (!state.cfg || !state.cfg.token) showSetup(); else { show(currentView()); renderAll(); refresh(); }
   notifState().catch(() => {});
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refresh(); });
-  setInterval(() => { if (document.visibilityState === "visible") refresh(); }, 60000);
+  setInterval(() => { if (document.visibilityState === "visible") { refresh(); } }, 60000);
+  setInterval(renderNext, 30000);
   if (navigator.serviceWorker) navigator.serviceWorker.addEventListener("message", (ev) => { if (ev.data && ev.data.type === "refresh") refresh(); });
 })();
 </script>
