@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Carnet de Coupons</title>
-<meta name="description" content="Tes coupons foot, ta mise conseillée et ton bilan, avant chaque match.">
+<meta name="description" content="Tes coupons foot analysés, tes paris simples et ton bilan, avant chaque match.">
 <meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f2f3f7" media="(prefers-color-scheme: light)">
 <link rel="manifest" href="manifest.webmanifest">
@@ -138,6 +138,12 @@ svg.i { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor;
 .leg .odd b { display: block; font-family: var(--f-num); font-weight: 700; font-size: 15px; background: var(--odds); color: var(--odds-ink); border-radius: 9px; padding: 5px 9px; font-variant-numeric: tabular-nums; }
 .leg .odd em { display: block; font-style: normal; font-size: 10.5px; color: var(--faint); margin-top: 3px; font-weight: 600; }
 .leg .why { grid-column: 2 / -1; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.leg .single { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: 12px; }
+.leg .single .tag { padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink); font-weight: 600; }
+.leg .single .tag.best { background: var(--won-soft); color: var(--won); }
+.leg details.ana { grid-column: 2 / -1; font-size: 13px; margin-top: 4px; }
+.leg details.ana summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 12.5px; }
+.leg details.ana p { margin: 6px 0 0; color: var(--ink); }
 .score { font-family: var(--f-num); font-weight: 700; color: var(--ink); background: var(--surface-2); border-radius: 6px; padding: 1px 6px; }
 
 /* Perforated tear line between the selections and the total, like a printed betting slip */
@@ -364,24 +370,13 @@ nav.tabbar .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-wid
     </div>
 
     <div class="card">
-      <h2><svg class="i"><use href="#i-shield"/></svg>Règles de mise</h2>
-      <ul class="rules">
-        <li><b>3 %</b>Risque faible : 45 % de chances ou plus</li>
-        <li><b>2 %</b>Risque moyen : entre 25 et 45 %</li>
-        <li><b>1 %</b>Risque élevé : moins de 25 %</li>
-        <li><b>8 %</b>Maximum engagé sur une même journée</li>
-        <li><b>80 %</b>Sous ce seuil du départ, pause conseillée</li>
-      </ul>
-    </div>
-
-    <div class="card">
       <h2><svg class="i"><use href="#i-key"/></svg>Connexion</h2>
       <p id="conn-info"></p>
       <button class="btn ghost" type="button" id="disconnect">Changer de clé d'accès</button>
     </div>
   </section>
 
-  <p class="foot">3 sélections max par coupon, marchés de buts, cotes entre 1,45 et 2,50. Aucun coupon n'est sûr : mise seulement ce que tu acceptes de perdre.</p>
+  <p class="foot">1 à 3 sélections par coupon, chacune jouable en simple, cotes de 1,30 à 1,74. Europe, MLS et sélections nationales. Aucun pari n'est sûr.</p>
 </div>
 
 <nav class="tabbar" id="tabs" aria-label="Sections">
@@ -401,7 +396,7 @@ nav.tabbar .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-wid
   const STATUS = { gagne: "Gagné", perdu: "Perdu", en_attente: "En attente", annule: "Annulé" };
   const ICON = { gagne: "i-check", perdu: "i-x", en_attente: "i-clock", annule: "i-minus" };
   const MARKET = { btts: "Les deux équipes marquent", buts_equipe: "Buts d'une équipe", total_buts: "Total de buts" };
-  const LEAGUE_COLOR = { "Ligue 1": "#2f6bff", "Premier League": "#7b2cbf", "LaLiga": "#ff4b3e", "Bundesliga": "#d20515", "Serie A": "#0aa5a5", "Liga Portugal": "#16a34a", "Süper Lig": "#e11d48", "Ligue des champions": "#3b5bdb", "Europa League": "#f08c00", "Conference League": "#2fb344" };
+  const LEAGUE_COLOR = { "Ligue 1": "#2f6bff", "Premier League": "#7b2cbf", "LaLiga": "#ff4b3e", "Bundesliga": "#d20515", "Serie A": "#0aa5a5", "Liga Portugal": "#16a34a", "Süper Lig": "#e11d48", "Ligue des champions": "#3b5bdb", "Europa League": "#f08c00", "Conference League": "#2fb344", "MLS": "#0b6e99", "Match international": "#b8860b" };
   const RISK = { faible: { pct: 0.03, label: "Risque faible" }, moyen: { pct: 0.02, label: "Risque moyen" }, eleve: { pct: 0.01, label: "Risque élevé" } };
   const DAY_CAP = 0.08;
   const VIEWS = ["coupons", "historique", "capital"];
@@ -570,12 +565,9 @@ nav.tabbar .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-wid
     const box = $("alerts"); box.textContent = "";
     const L = ledger(); if (L.now == null) return;
     const add = (cls, t, d) => { const b = el("div", "banner " + cls); b.appendChild(icon("i-alert")); const x = el("div"); x.append(el("b", null, t), el("span", null, d)); b.appendChild(x); box.appendChild(b); };
-    if (L.start && L.now < L.start * 0.8) add("stop", "Pause conseillée", "Ton capital est passé sous 80 % du départ. Mieux vaut arrêter quelques jours que chercher à te refaire.");
-    const eng = engagedToday();
-    if (eng > L.now * DAY_CAP) add("warn", "Limite du jour dépassée", "Tu as engagé " + eur(eng) + " aujourd'hui, au-delà des 8 % conseillés (" + eur(L.now * DAY_CAP) + ").");
   }
   function stakeBox(c) {
-    const box = el("div", "stake"), p = state.paris[c.id], risk = riskOf(c);
+    const box = el("div", "stake"), p = state.paris[c.id];
     if (p) {
       const row = el("div", "played");
       row.appendChild(el("span", null, "Joué : " + eur(p.mise) + " à " + fmtOdd(oddOf(c, p))));
@@ -590,11 +582,8 @@ nav.tabbar .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-wid
       }
       return box;
     }
-    const sugg = stakeFor(c), row = el("div", "stake-row");
-    const a = el("div"); a.append(el("span", "k", "Mise conseillée"), el("span", "v", sugg == null ? "–" : eur(sugg)), el("span", "risk " + risk, RISK[risk].label + " · " + Math.round(RISK[risk].pct * 100) + " %"));
-    const b = el("div"); b.append(el("span", "k", "Gain possible"), el("span", "v gain", sugg == null ? "–" : eur(sugg * c.cote_totale)));
-    row.append(a, b); box.appendChild(row);
-    if (c.statut && c.statut !== "en_attente") return box;
+    const sugg = null;
+    if (c.statut && c.statut !== "en_attente") return null;
     if (state.editing === c.id) {
       const f = el("form", "form");
       const fm = el("div", "field"), lm = el("label", null, "Mise (€)"), im = el("input");
@@ -636,7 +625,7 @@ nav.tabbar .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-wid
     card.appendChild(head);
 
     const ul = el("ul", "legs");
-    legs.forEach(s => {
+    legs.forEach((s, i) => {
       const ss = s.statut || "en_attente";
       const li = el("li", "leg");
       const dot = el("span", "st " + ss); dot.appendChild(icon(ICON[ss] || "i-clock"));
@@ -647,13 +636,23 @@ nav.tabbar .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-wid
       meta.append(ld, document.createTextNode([s.competition, s.heure].filter(Boolean).join(" · ")));
       if (s.score) meta.appendChild(el("span", "score", s.score));
       li.append(dot, m, odd, meta, el("div", "bet", s.pari || ""));
+      const sg = el("div", "single");
+      sg.appendChild(el("span", "tag", "En simple : " + fmtOdd(s.cote)));
+      if (typeof s.proba_estimee === "number") sg.appendChild(el("span", "tag", "Estimation : " + Math.round(s.proba_estimee * 100) + " %"));
+      if (c.meilleur_simple === i && legs.length > 1) sg.appendChild(el("span", "tag best", "Meilleur simple"));
+      li.appendChild(sg);
       if (s.raison) li.appendChild(el("div", "why", s.raison));
+      if (s.analyse) {
+        const d = el("details", "ana"); d.appendChild(el("summary", null, "Analyse détaillée"));
+        String(s.analyse).split(/\n+/).forEach(t => { if (t.trim()) d.appendChild(el("p", null, t.trim())); });
+        li.appendChild(d);
+      }
       ul.appendChild(li);
     });
     card.appendChild(ul);
     card.appendChild(el("div", "tear"));
     const tot = el("div", "total");
-    tot.append(el("span", "lbl2", "Cote totale"), el("span", "big", fmtOdd(c.cote_totale)));
+    tot.append(el("span", "lbl2", legs.length > 1 ? "Cote du combiné" : "Cote"), el("span", "big", fmtOdd(c.cote_totale)));
     const p = probaOf(c);
     if (p != null) {
       const m = el("div", "meter"), bar = el("div", "bar"), fill = el("i", riskOf(c));
@@ -663,7 +662,7 @@ nav.tabbar .badge { position: absolute; top: 4px; left: calc(50% + 6px); min-wid
     }
     card.appendChild(tot);
     if (c.bilan && st !== "en_attente") card.appendChild(el("p", "bilan", c.bilan));
-    card.appendChild(stakeBox(c));
+    const sbx = stakeBox(c); if (sbx) card.appendChild(sbx);
     if (c.infos || c.conseil) {
       const d = el("details", "notes"), s = el("summary");
       s.append(document.createTextNode("Dernières infos et conseil"), icon("i-chev"));
